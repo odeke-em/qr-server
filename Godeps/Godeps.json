@@ -1,0 +1,36 @@
+{
+	"ImportPath": "github.com/odeke-em/qr-demo-server",
+	"GoVersion": "go1.5.1",
+	"Deps": [
+		{
+			"ImportPath": "github.com/codegangsta/inject",
+			"Comment": "v1.0-rc1-10-g33e0aa1",
+			"Rev": "33e0aa1cb7c019ccc3fbe049a8262a6403d30504"
+		},
+		{
+			"ImportPath": "github.com/go-martini/martini",
+			"Comment": "v1.0-166-g9987fc5",
+			"Rev": "9987fc59f060a063247d22472c2fb48654bac5f6"
+		},
+		{
+			"ImportPath": "github.com/martini-contrib/binding",
+			"Rev": "8aaceec3b52c275477f32c95ea5c6e8ccaba04c5"
+		},
+		{
+			"ImportPath": "github.com/odeke-em/extractor",
+			"Rev": "801861aedb854c7ac5e1329e9713023e9dc2b4d4"
+		},
+		{
+			"ImportPath": "github.com/odeke-em/meddler",
+			"Rev": "d2b51d2b40e786ab5f810d85e65b96404cf33570"
+		},
+		{
+			"ImportPath": "github.com/odeke-em/rsc/gf256",
+			"Rev": "6ad75e1e26192f3d140b6486deb99c9dbd289846"
+		},
+		{
+			"ImportPath": "github.com/odeke-em/rsc/qr",
+			"Rev": "6ad75e1e26192f3d140b6486deb99c9dbd289846"
+		}
+	]
+}
