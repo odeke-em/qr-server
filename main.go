@@ -75,7 +75,7 @@ func main() {
 	m.Get("/qr", binding.Bind(meddler.Payload{}), presentQRCode)
 	m.Post("/qr", binding.Bind(meddler.Payload{}), presentQRCode)
 
-	m.RunOnAddr(envAddrInfo.ConnectionString())
+	m.Run() // m.RunOnAddr(envAddrInfo.ConnectionString())
 }
 
 func presentQRCode(pl meddler.Payload, res http.ResponseWriter, req *http.Request) {
