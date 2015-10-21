@@ -46,7 +46,7 @@ func envGet(varname string, placeholders ...string) string {
 
 func addressInfoFromEnv() *addressInfo {
 	return &addressInfo{
-		port: envGet(ENV_DRIVE_SERVER_PORT, "8010"),
+		port: envGet(ENV_DRIVE_SERVER_PORT, "3000"),
 		host: envGet(ENV_DRIVE_SERVER_HOST, "localhost"),
 	}
 }
