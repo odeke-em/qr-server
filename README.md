@@ -5,7 +5,8 @@ QR share demo server
 ### Env variables
 
 ```shell
-export MONGOHQ_URI=<MongoHqURI> # Needed
+export MONGOHQ_URI=<MongoHqURI> # Required
+export DBNAME="aDBname" # Required
 export RESTRICT_DOMAINS=true # or false -- Optional
 ```
 

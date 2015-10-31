@@ -27,6 +27,7 @@ const (
 	ENV_DRIVE_SERVER_PORT     = "DRIVE_SERVER_PORT"
 	ENV_DRIVE_SERVER_HOST     = "DRIVE_SERVER_HOST"
 
+	ENV_DBNAME           = "DBNAME"
 	ENV_RESTRICT_DOMAINS = "RESTRICT_DOMAINS"
 
 	DefaultMongoURI = "mongodb://localhost:27017"
@@ -74,6 +75,7 @@ func addressInfoFromEnv() *addressInfo {
 
 var envKeySet = extractor.KeySetFromEnv(envKeyAlias)
 var envAddrInfo = addressInfoFromEnv()
+var envDbName = envGet(ENV_DBNAME, models.DbName)
 
 func (ai *addressInfo) ConnectionString() string {
 	// TODO: ensure fields meet rubric
@@ -91,7 +93,7 @@ func main() {
 	m.Get("/drive/qr", binding.Bind(meddler.Payload{}), googleDriveDomainRestrictedQRCode)
 	m.Post("/drive/qr", binding.Bind(meddler.Payload{}), googleDriveDomainRestrictedQRCode)
 
-	m.Post("/gen", GenerateKeySet)
+	// m.Post("/gen", GenerateKeySet)
 
 	m.Run() // m.RunOnAddr(envAddrInfo.ConnectionString())
 }
@@ -112,7 +114,7 @@ func sessionHandler(fn func(*mgo.Session) (interface{}, error)) (interface{}, er
 
 func lookUpKeySet(publicKey string) (*extractor.KeySet, error) {
 	result, err := sessionHandler(func(session *mgo.Session) (interface{}, error) {
-		collection := session.DB(models.DbName).C(models.KeySetModelName)
+		collection := session.DB(envDbName).C(models.KeySetModelName)
 		result := models.KeySet{}
 
 		if qErr := collection.Find(bson.M{"publickey": publicKey}).One(&result); qErr != nil {
@@ -160,7 +162,7 @@ func _generateKeySet() (*models.KeySet, error) {
 			PrivateKey: newUUID4Joined(),
 		}
 
-		collection := session.DB(models.DbName).C(models.KeySetModelName)
+		collection := session.DB(envDbName).C(models.KeySetModelName)
 		query := []bson.M{bson.M{"publickey": ks.PublicKey}, bson.M{"privatekey": ks.PrivateKey}}
 		orQuery := bson.M{"$or": query}
 
