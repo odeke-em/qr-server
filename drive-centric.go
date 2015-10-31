@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
-	drive "github.com/odeke-em/drive/src"
+	// drive "github.com/odeke-em/drive/src"
 	"github.com/odeke-em/meddler"
 )
 
@@ -18,9 +18,13 @@ func googleDriveDomainRestrictedQRCode(pl meddler.Payload, res http.ResponseWrit
 		return
 	}
 
-	driveParsedURL, dErr := url.Parse(drive.DriveResourceEntryURL)
+	// Uncomment once godep starts working again
+	// resourceURLStr := drive.DriveResourceEntryURL -- godep is tripping with drive, as of `Sat Oct 31 04:14:35 MDT 2015`
+	resourceURLStr := "https://drive.google.com"
+	driveParsedURL, dErr := url.Parse(resourceURLStr)
+
 	if dErr != nil {
-		panic(fmt.Errorf("driveResourceEntryURL %q got %v", drive.DriveResourceEntryURL, dErr))
+		panic(fmt.Errorf("driveResourceEntryURL %q got %v", resourceURLStr, dErr))
 	}
 
 	if parsedURL.Host != driveParsedURL.Host {

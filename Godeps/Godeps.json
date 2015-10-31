@@ -1,6 +1,6 @@
 {
-	"ImportPath": "github.com/odeke-em/qr-demo-server",
-	"GoVersion": "go1.5.1",
+	"ImportPath": "github.com/odeke-em/qr-server",
+	"GoVersion": "go1.5",
 	"Deps": [
 		{
 			"ImportPath": "github.com/codegangsta/inject",
@@ -21,8 +21,16 @@
 			"Rev": "801861aedb854c7ac5e1329e9713023e9dc2b4d4"
 		},
 		{
+			"ImportPath": "github.com/odeke-em/go-uuid",
+			"Rev": "1db0ee9ef4f44dc103e66d67afe6363cc8d32845"
+		},
+		{
 			"ImportPath": "github.com/odeke-em/meddler",
 			"Rev": "d2b51d2b40e786ab5f810d85e65b96404cf33570"
+		},
+		{
+			"ImportPath": "github.com/odeke-em/qr-demo-server/models",
+			"Rev": "2e661ab47504a3a9b15ac2d450027501cc355594"
 		},
 		{
 			"ImportPath": "github.com/odeke-em/rsc/gf256",
@@ -31,6 +39,11 @@
 		{
 			"ImportPath": "github.com/odeke-em/rsc/qr",
 			"Rev": "6ad75e1e26192f3d140b6486deb99c9dbd289846"
+		},
+		{
+			"ImportPath": "gopkg.in/mgo.v2",
+			"Comment": "r2015.10.05-1-g4d04138",
+			"Rev": "4d04138ffef2791c479c0c8bbffc30b34081b8d9"
 		}
 	]
 }
