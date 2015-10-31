@@ -1,1 +1,1 @@
-web: qr-demo-server
+web: qr-server
