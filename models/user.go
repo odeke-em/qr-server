@@ -12,20 +12,34 @@ const (
 )
 
 type User struct {
+	lastEditTimeTrack
 	Email           string
 	MainPublicKey   string
 	MainPrivateKey  string
 	ExpiryDateEpoch int64
-	Id              *bson.ObjectId
+	id              bson.ObjectId `bson:"_id,omitempty"`
 }
 
 type KeySet struct {
-	PublicKey  string
-	PrivateKey string
-	OwnerId    *bson.ObjectId
-	Id         *bson.ObjectId
+	lastEditTimeTrack
+	PublicKey  string `json:"public_key"`
+	PrivateKey string `json:"private_key"`
+	ownerId    *bson.ObjectId
+	id         bson.ObjectId `bson:"_id,omitempty"`
+}
+
+func (ks *KeySet) SetupBeforeUpdate() {
+	if !ks.id.Valid() {
+		ks.id = bson.NewObjectId()
+	}
+	ks.lastEditTime = time.Now().Unix()
+}
+
+type lastEditTimeTrack struct {
+	lastEditTime int64
 }
 
 func (u *User) Valid() bool {
-	return u.Email != "" && time.Now().Unix() < u.ExpiryDateEpoch
+	// TODO: check email properly
+	return time.Now().Unix() < u.ExpiryDateEpoch
 }

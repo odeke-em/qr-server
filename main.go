@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/martini-contrib/binding"
 
 	"github.com/odeke-em/extractor"
+	uuid "github.com/odeke-em/go-uuid"
 	"github.com/odeke-em/meddler"
 	"github.com/odeke-em/qr-demo-server/models"
 	"github.com/odeke-em/rsc/qr"
@@ -91,47 +93,108 @@ func main() {
 	m.Get("/qr", binding.Bind(meddler.Payload{}), presentQRCode)
 	m.Post("/qr", binding.Bind(meddler.Payload{}), presentQRCode)
 
+	m.Post("/gen", GenerateKeySet)
+
 	m.Run() // m.RunOnAddr(envAddrInfo.ConnectionString())
 }
 
-func lookUpKeySet(publicKey string) (ks *extractor.KeySet, err error) {
+func sessionHandler(fn func(*mgo.Session) (interface{}, error)) (interface{}, error) {
 	uri := mongoURI()
 
 	session, sErr := mgo.Dial(uri)
-	if sErr != nil {
-		err = sErr
+	if sErr == nil {
+		defer session.Close()
+		session.SetSafe(&mgo.Safe{})
+	}
+
+	result, err := fn(session)
+
+	return result, err
+}
+
+func lookUpKeySet(publicKey string) (*extractor.KeySet, error) {
+	result, err := sessionHandler(func(session *mgo.Session) (interface{}, error) {
+		collection := session.DB(models.DbName).C(models.KeySetModelName)
+		result := models.KeySet{}
+
+		if qErr := collection.Find(bson.M{"publickey": publicKey}).One(&result); qErr != nil {
+			return nil, qErr
+		}
+
+		ks := &extractor.KeySet{
+			PublicKey:  result.PublicKey,
+			PrivateKey: result.PrivateKey,
+		}
+
+		return ks, nil
+	})
+
+	ks, _ := result.(*extractor.KeySet)
+
+	return ks, err
+}
+
+func GenerateKeySet(res http.ResponseWriter, req *http.Request) {
+	ks, err := _generateKeySet()
+	if err != nil {
+		fmt.Fprintf(res, "%v\n", err)
 		return
 	}
 
-	defer session.Close()
+	marshalled, err := json.Marshal(ks)
+	var result interface{} = string(marshalled)
 
-	session.SetSafe(&mgo.Safe{})
-
-	collection := session.DB(models.DbName).C(models.KeySetModelName)
-	result := models.KeySet{}
-
-	if qErr := collection.Find(bson.M{"publickey": publicKey}).One(&result); qErr != nil {
-		err = qErr
-		return
+	if err != nil {
+		result = err
 	}
 
-	ks = &extractor.KeySet{
-		PublicKey:  result.PublicKey,
-		PrivateKey: result.PrivateKey,
-	}
+	fmt.Fprintf(res, "%v\n", result)
+}
 
-	return ks, nil
+func _generateKeySet() (*models.KeySet, error) {
+	result, err := sessionHandler(func(session *mgo.Session) (interface{}, error) {
+		ks := &models.KeySet{
+			PublicKey:  uuid.NewRandom().String(),
+			PrivateKey: uuid.NewRandom().String(),
+		}
+
+		collection := session.DB(models.DbName).C(models.KeySetModelName)
+		query := []bson.M{bson.M{"publickey": ks.PublicKey}, bson.M{"privatekey": ks.PrivateKey}}
+		orQuery := bson.M{"$or": query}
+
+		result := models.KeySet{}
+		err := collection.Find(orQuery).One(&result)
+		if err == nil { // Matches found
+			return nil, fmt.Errorf("cannot generate unique private nor publickeys currently, try again later!")
+		}
+
+		ks.SetupBeforeUpdate()
+		err = collection.Insert(ks)
+		if err != nil {
+			return nil, err
+		}
+
+		return ks, nil
+	})
+
+	mks, ok := result.(*models.KeySet)
+	return mks, err
 }
 
 func presentQRCode(pl meddler.Payload, res http.ResponseWriter, req *http.Request) {
-	// Public key lookup
-	if pl.PublicKey != envKeySet.PublicKey {
-		http.Error(res, "invalid publickey", 405)
+	foundKeySet, err := lookUpKeySet(pl.PublicKey)
+
+	if err != nil {
+		http.Error(res, fmt.Sprintf("encountered error: %v", err), 400)
 		return
 	}
 
+	if foundKeySet == nil {
+		panic("null keySet returned from publicKeyLookup")
+	}
+
 	rawTextForSigning := pl.RawTextForSigning()
-	if !envKeySet.Match([]byte(rawTextForSigning), []byte(pl.Signature)) {
+	if !foundKeySet.Match([]byte(rawTextForSigning), []byte(pl.Signature)) {
 		http.Error(res, "invalid signature", 403)
 		return
 	}
