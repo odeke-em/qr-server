@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/mgo.v2"
@@ -25,6 +26,8 @@ const (
 	ENV_DRIVE_SERVER_PRIV_KEY = "DRIVE_SERVER_PRIV_KEY"
 	ENV_DRIVE_SERVER_PORT     = "DRIVE_SERVER_PORT"
 	ENV_DRIVE_SERVER_HOST     = "DRIVE_SERVER_HOST"
+
+	ENV_RESTRICT_DOMAINS = "RESTRICT_DOMAINS"
 
 	DefaultMongoURI = "mongodb://localhost:27017"
 	DefaultPort     = "4040"
@@ -78,20 +81,15 @@ func (ai *addressInfo) ConnectionString() string {
 }
 
 func main() {
-	if envKeySet.PublicKey == "" {
-		errorPrint("publicKey not set. Please set %s in your env.\n", envKeyAlias.PubKeyAlias)
-		return
-	}
-
-	if envKeySet.PrivateKey == "" {
-		errorPrint("privateKey not set. Please set %s in your env.\n", envKeyAlias.PrivKeyAlias)
-		return
-	}
-
 	m := martini.Classic()
 
-	m.Get("/qr", binding.Bind(meddler.Payload{}), presentQRCode)
-	m.Post("/qr", binding.Bind(meddler.Payload{}), presentQRCode)
+	if envGet(ENV_RESTRICT_DOMAINS) == "" {
+		m.Get("/qr", binding.Bind(meddler.Payload{}), presentQRCode)
+		m.Post("/qr", binding.Bind(meddler.Payload{}), presentQRCode)
+	}
+
+	m.Get("/drive/qr", binding.Bind(meddler.Payload{}), googleDriveDomainRestrictedQRCode)
+	m.Post("/drive/qr", binding.Bind(meddler.Payload{}), googleDriveDomainRestrictedQRCode)
 
 	m.Post("/gen", GenerateKeySet)
 
@@ -151,11 +149,15 @@ func GenerateKeySet(res http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(res, "%v\n", result)
 }
 
+func newUUID4Joined() string {
+	return strings.Replace(uuid.NewRandom().String(), "-", "", -1)
+}
+
 func _generateKeySet() (*models.KeySet, error) {
 	result, err := sessionHandler(func(session *mgo.Session) (interface{}, error) {
 		ks := &models.KeySet{
-			PublicKey:  uuid.NewRandom().String(),
-			PrivateKey: uuid.NewRandom().String(),
+			PublicKey:  newUUID4Joined(),
+			PrivateKey: newUUID4Joined(),
 		}
 
 		collection := session.DB(models.DbName).C(models.KeySetModelName)
@@ -177,7 +179,7 @@ func _generateKeySet() (*models.KeySet, error) {
 		return ks, nil
 	})
 
-	mks, ok := result.(*models.KeySet)
+	mks, _ := result.(*models.KeySet)
 	return mks, err
 }
 
