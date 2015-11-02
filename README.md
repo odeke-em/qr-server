@@ -1,5 +1,5 @@
-# qr-demo-server
-QR share demo server
+# qr-server
+QR as a service server
 
 
 ### Env variables
