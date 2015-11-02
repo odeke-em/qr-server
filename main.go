@@ -17,7 +17,7 @@ import (
 	"github.com/odeke-em/extractor"
 	uuid "github.com/odeke-em/go-uuid"
 	"github.com/odeke-em/meddler"
-	"github.com/odeke-em/qr-demo-server/models"
+	"github.com/odeke-em/qr-server/models"
 	"github.com/odeke-em/rsc/qr"
 )
 
@@ -137,7 +137,8 @@ func lookUpKeySet(publicKey string) (*extractor.KeySet, error) {
 func GenerateKeySet(res http.ResponseWriter, req *http.Request) {
 	ks, err := _generateKeySet()
 	if err != nil {
-		fmt.Fprintf(res, "%v\n", err)
+		fmt.Fprintf(os.Stderr, "%v error: %v\n", time.Now().UTC(), err)
+		fmt.Fprintf(res, "error encountered please try again!")
 		return
 	}
 
@@ -155,25 +156,35 @@ func newUUID4Joined() string {
 	return strings.Replace(uuid.NewRandom().String(), "-", "", -1)
 }
 
+func newKeySet() *models.KeySet {
+	ks := &models.KeySet{
+		PublicKey:  newUUID4Joined(),
+		PrivateKey: newUUID4Joined(),
+	}
+
+	ks.Init()
+
+	return ks
+}
+
 func _generateKeySet() (*models.KeySet, error) {
 	result, err := sessionHandler(func(session *mgo.Session) (interface{}, error) {
-		ks := &models.KeySet{
-			PublicKey:  newUUID4Joined(),
-			PrivateKey: newUUID4Joined(),
-		}
+		ks := newKeySet()
 
 		collection := session.DB(envDbName).C(models.KeySetModelName)
-		query := []bson.M{bson.M{"publickey": ks.PublicKey}, bson.M{"privatekey": ks.PrivateKey}}
-		orQuery := bson.M{"$or": query}
-
-		result := models.KeySet{}
-		err := collection.Find(orQuery).One(&result)
-		if err == nil { // Matches found
-			return nil, fmt.Errorf("cannot generate unique private nor publickeys currently, try again later!")
+		index := mgo.Index{
+			Key:        []string{"privatekey", "publickey"},
+			Unique:     true,
+			Background: false, // TODO: check if blocking will affect speed
 		}
 
-		ks.SetupBeforeUpdate()
-		err = collection.Insert(ks)
+		indexErr := collection.EnsureIndex(index)
+		if indexErr != nil {
+			return nil, indexErr
+		}
+
+		ks.PreSave()
+		err := collection.Insert(ks)
 		if err != nil {
 			return nil, err
 		}

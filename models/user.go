@@ -7,12 +7,12 @@ import (
 )
 
 const (
-	DbName          = "qr-demo-server"
+	DbName          = "qr-server"
 	KeySetModelName = "keyset"
 )
 
 type User struct {
-	lastEditTimeTrack
+	lastEditTime    time.Time
 	Email           string
 	MainPublicKey   string
 	MainPrivateKey  string
@@ -21,22 +21,30 @@ type User struct {
 }
 
 type KeySet struct {
-	lastEditTimeTrack
-	PublicKey  string `json:"public_key"`
-	PrivateKey string `json:"private_key"`
-	ownerId    *bson.ObjectId
-	id         bson.ObjectId `bson:"_id,omitempty"`
+	LastEditTime time.Time `json:"lastedit_time"`
+	DateCreated  time.Time `json:"date_created"`
+	PublicKey    string    `json:"public_key"`
+	PrivateKey   string    `json:"private_key"`
+	ownerId      *bson.ObjectId
+	id           bson.ObjectId `bson:"_id,omitempty"`
 }
 
-func (ks *KeySet) SetupBeforeUpdate() {
+func currentTimeUTC() time.Time {
+	return time.Now().UTC()
+}
+
+func (ks *KeySet) PreSave() {
 	if !ks.id.Valid() {
 		ks.id = bson.NewObjectId()
 	}
-	ks.lastEditTime = time.Now().Unix()
+	ks.LastEditTime = currentTimeUTC()
 }
 
-type lastEditTimeTrack struct {
-	lastEditTime int64
+func (ks *KeySet) Init() {
+	if !ks.id.Valid() {
+		ks.id = bson.NewObjectId()
+	}
+	ks.DateCreated = currentTimeUTC()
 }
 
 func (u *User) Valid() bool {
