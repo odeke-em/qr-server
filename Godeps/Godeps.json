@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/odeke-em/qr-server",
-	"GoVersion": "go1.5",
+	"GoVersion": "go1.5.1",
 	"Deps": [
 		{
 			"ImportPath": "github.com/codegangsta/inject",
@@ -27,10 +27,6 @@
 		{
 			"ImportPath": "github.com/odeke-em/meddler",
 			"Rev": "d2b51d2b40e786ab5f810d85e65b96404cf33570"
-		},
-		{
-			"ImportPath": "github.com/odeke-em/qr-demo-server/models",
-			"Rev": "2e661ab47504a3a9b15ac2d450027501cc355594"
 		},
 		{
 			"ImportPath": "github.com/odeke-em/rsc/gf256",
